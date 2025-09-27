@@ -4,7 +4,12 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
-seed=0
+# Load 
+data_attack = np.load('A2_materials/KDD99/testing_attack.npy')   # shape: [n_attack, 41]
+data_normal = np.load('A2_materials/KDD99/testing_normal.npy')   # shape: [n_normal, 41]
+train_normal = np.load('A2_materials/KDD99/training_normal.npy') # shape: [n_train_norm, 41]
+
+seed = 0
 rng = np.random.RandomState(seed)
 
 def load_data(seed=0):
