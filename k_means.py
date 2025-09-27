@@ -1,11 +1,11 @@
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 from typing import Tuple
     
 def euclidean_distance(point1: np.ndarray, point2: np.ndarray) -> float:
     return np.sqrt(np.sum((point1 - point2) ** 2))
 
-def initialize_centroids(k, data: np.ndarray) -> np.ndarray:
+def initialize_centroids(k: int, data: np.ndarray) -> np.ndarray:
     n_samples, n_features = data.shape
     centroids = np.zeros((k, n_features))
     
@@ -26,7 +26,7 @@ def assign_clusters(data: np.ndarray, centroids: np.ndarray) -> np.ndarray:
     
     return cluster_assignments
 
-def update_centroids(k, data: np.ndarray, cluster_assignments: np.ndarray, centroids: np.ndarray) -> np.ndarray:
+def update_centroids(k: int, data: np.ndarray, cluster_assignments: np.ndarray, centroids: np.ndarray) -> np.ndarray:
     n_features = data.shape[1]
     new_centroids = np.zeros((k, n_features))
     
@@ -40,8 +40,8 @@ def update_centroids(k, data: np.ndarray, cluster_assignments: np.ndarray, centr
     
     return new_centroids
 
-def fit(data: np.ndarray, centroids: np.ndarray, max_iterations: int) -> Tuple[np.ndarray, np.ndarray]:
-    initialize_centroids(data)
+def fit(k: int, data: np.ndarray, centroids: np.ndarray, max_iterations: int) -> Tuple[np.ndarray, np.ndarray]:
+    initialize_centroids(k, data)
     
     for iteration in range(max_iterations):
         # Assign points to clusters
@@ -57,31 +57,40 @@ def fit(data: np.ndarray, centroids: np.ndarray, max_iterations: int) -> Tuple[n
             break
         
         centroids = new_centroids
+        visualize_clusters(data, cluster_assignments, centroids)
     return cluster_assignments, centroids
 
 def predict(data: np.ndarray, centroids: np.ndarray) -> np.ndarray:
     # Try to identify the next iteration
     return assign_clusters(data, centroids)
 
-def visualize_clusters(data: np.ndarray, cluster_assignments: np.ndarray, centroids: np.ndarray):
-    """Visualize the clustering results"""
-    colors = ['red', 'blue', 'green', 'purple', 'orange', 'yellow', 'pink', 'brown']
-    
+def visualize_clusters(data: np.ndarray, cluster_assignments: np.ndarray, centroids: np.ndarray) -> None:
     plt.figure(figsize=(10, 8))
     
-    # Plot data points
-    for i in range(len(np.unique(cluster_assignments))):
-        cluster_data = data[cluster_assignments == i]
-        plt.scatter(cluster_data[:, 0], cluster_data[:, 1], 
-                   c=colors[i % len(colors)], alpha=0.6, label=f'Cluster {i}')
+    # Get unique clusters and create color map
+    unique_clusters = np.unique(cluster_assignments)
+    colors = plt.cm.tab10(np.linspace(0, 1, len(unique_clusters)))
+    
+    # Plot data points colored by cluster
+    for i, cluster in enumerate(unique_clusters):
+        cluster_points = data[cluster_assignments == cluster]
+        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], 
+                   c=[colors[i]], label=f'Cluster {int(cluster)}', alpha=0.7, s=50)
     
     # Plot centroids
     plt.scatter(centroids[:, 0], centroids[:, 1], 
-               c='black', marker='x', s=200, linewidths=3, label='Centroids')
+               c='red', marker='x', s=200, linewidths=3, label='Centroids')
     
-    plt.title('K-means Clustering Results')
     plt.xlabel('Feature 1')
     plt.ylabel('Feature 2')
+    plt.title('K-Means Clustering Results')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.show()
+
+# Some test code
+import Loading
+data = Loading.load_data(0)[1]
+centroids = initialize_centroids(3, data=data)
+clusters, centroids = fit(5, data, centroids, 100)
+visualize_clusters(data, clusters, centroids)
