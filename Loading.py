@@ -1,31 +1,37 @@
-#!/usr/bin/env python3
+
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
-# Load 
-data_attack = np.load('/home/t/Downloads/Code/Assignment2/A2_materials/data/testing_attack.npy')   # shape: [n_attack, 41]
-data_normal = np.load('/home/t/Downloads/Code/Assignment2/A2_materials/data/testing_normal.npy')   # shape: [n_normal, 41]
-train_normal = np.load('/home/t/Downloads/Code/Assignment2/A2_materials/data/training_normal.npy') # shape: [n_train_norm, 41]
-
-seed = 0
+seed=0
 rng = np.random.RandomState(seed)
 
-# Scale fit on train_normal only
-scaler = StandardScaler().fit(train_normal)
-train_normal_s = scaler.transform(train_normal)
-data_attack_s  = scaler.transform(data_attack)
-data_normal_s  = scaler.transform(data_normal)
+def load_data(seed=0):
 
-# PCA fit on train_normal only
-pca = PCA(n_components=2, random_state=seed)
-train_pca = pca.fit_transform(train_normal_s)
-attack_pca = pca.transform(data_attack_s)
-normal_pca = pca.transform(data_normal_s)
+    # Load the data
+    data_attack = np.load('A2_materials/KDD99/testing_attack.npy')   # shape: [n_attack, 41]
+    data_normal = np.load('A2_materials/KDD99/testing_normal.npy')   # shape: [n_normal, 41]
+    train_normal = np.load('A2_materials/KDD99/training_normal.npy') # shape: [n_train_norm, 41]
+
+
+    # Scale fit on train_normal only
+    scaler = StandardScaler().fit(train_normal)
+    train_normal_s = scaler.transform(train_normal)
+    data_attack_s  = scaler.transform(data_attack)
+    data_normal_s  = scaler.transform(data_normal)
+
+    # PCA fit on train_normal only
+    pca = PCA(n_components=2, random_state=seed)
+    train_pca = pca.fit_transform(train_normal_s)
+    attack_pca = pca.transform(data_attack_s)
+    normal_pca = pca.transform(data_normal_s)
+    return train_pca, attack_pca, normal_pca
+
+train_pca, attack_pca, normal_pca = load_data(seed=0)
 
 # Plot
-max_points = 2000
+max_points = 4000
 idx_attack = rng.choice(attack_pca.shape[0], min(max_points, attack_pca.shape[0]), replace=False)
 idx_normal = rng.choice(normal_pca.shape[0], min(max_points, normal_pca.shape[0]), replace=False)
 
