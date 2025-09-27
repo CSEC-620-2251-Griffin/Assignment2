@@ -39,3 +39,49 @@ def update_centroids(k, data: np.ndarray, cluster_assignments: np.ndarray, centr
             new_centroids[i] = centroids[i]
     
     return new_centroids
+
+def fit(data: np.ndarray, centroids: np.ndarray, max_iterations: int) -> Tuple[np.ndarray, np.ndarray]:
+    initialize_centroids(data)
+    
+    for iteration in range(max_iterations):
+        # Assign points to clusters
+        cluster_assignments = assign_clusters(data, centroids)
+        
+        # Update centroids
+        k = centroids.shape[0]
+        new_centroids = update_centroids(k, data, cluster_assignments, centroids)
+        
+        # Check for convergence
+        if np.allclose(centroids, new_centroids):
+            print(f"Converged after {iteration + 1} iterations")
+            break
+        
+        centroids = new_centroids
+    return cluster_assignments, centroids
+
+def predict(data: np.ndarray, centroids: np.ndarray) -> np.ndarray:
+    # Try to identify the next iteration
+    return assign_clusters(data, centroids)
+
+def visualize_clusters(data: np.ndarray, cluster_assignments: np.ndarray, centroids: np.ndarray):
+    """Visualize the clustering results"""
+    colors = ['red', 'blue', 'green', 'purple', 'orange', 'yellow', 'pink', 'brown']
+    
+    plt.figure(figsize=(10, 8))
+    
+    # Plot data points
+    for i in range(len(np.unique(cluster_assignments))):
+        cluster_data = data[cluster_assignments == i]
+        plt.scatter(cluster_data[:, 0], cluster_data[:, 1], 
+                   c=colors[i % len(colors)], alpha=0.6, label=f'Cluster {i}')
+    
+    # Plot centroids
+    plt.scatter(centroids[:, 0], centroids[:, 1], 
+               c='black', marker='x', s=200, linewidths=3, label='Centroids')
+    
+    plt.title('K-means Clustering Results')
+    plt.xlabel('Feature 1')
+    plt.ylabel('Feature 2')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.show()
