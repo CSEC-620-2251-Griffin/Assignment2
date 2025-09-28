@@ -40,7 +40,18 @@ def update_centroids(k: int, data: np.ndarray, cluster_assignments: np.ndarray, 
     
     return new_centroids
 
-def fit(k: int, data: np.ndarray, centroids: np.ndarray, max_iterations: int) -> Tuple[np.ndarray, np.ndarray]:
+def detect_anomalies(data: np.ndarray, centroids: np.ndarray, cluster_assignments: np.ndarray, threshold: float) -> np.ndarray:
+    samples = data.shape[0]
+    anomalies = np.zeros(samples, dtype=bool)
+    
+    for i, point in enumerate(data):
+        assigned_cluster = int(cluster_assignments[i])
+        distance = euclidean_distance(point, centroids[assigned_cluster])
+        anomalies[i] = distance > threshold
+    
+    return anomalies
+
+def fit(k: int, data: np.ndarray, centroids: np.ndarray, max_iterations: int, threshold: float = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     initialize_centroids(k, data)
     
     for iteration in range(max_iterations):
@@ -57,25 +68,45 @@ def fit(k: int, data: np.ndarray, centroids: np.ndarray, max_iterations: int) ->
             break
         
         centroids = new_centroids
-        visualize_clusters(data, cluster_assignments, centroids)
-    return cluster_assignments, centroids
+    
+    # Detect anomalies if threshold is provided
+    anomalies = np.zeros(len(data), dtype=bool)
+    if threshold is not None:
+        anomalies = detect_anomalies(data, centroids, cluster_assignments, threshold)
+        print(f"Detected {np.sum(anomalies)} anomalous points")
+    
+    return cluster_assignments, centroids, anomalies
 
 def predict(data: np.ndarray, centroids: np.ndarray) -> np.ndarray:
     # Try to identify the next iteration
     return assign_clusters(data, centroids)
 
-def visualize_clusters(data: np.ndarray, cluster_assignments: np.ndarray, centroids: np.ndarray) -> None:
-    plt.figure(figsize=(10, 8))
+def visualize_clusters(data: np.ndarray, cluster_assignments: np.ndarray, centroids: np.ndarray, anomalies: np.ndarray = None) -> None:
+    plt.figure(figsize=(12, 8))
     
     # Get unique clusters and create color map
     unique_clusters = np.unique(cluster_assignments)
     colors = plt.cm.tab10(np.linspace(0, 1, len(unique_clusters)))
     
-    # Plot data points colored by cluster
+    # Plot normal data points colored by cluster
     for i, cluster in enumerate(unique_clusters):
-        cluster_points = data[cluster_assignments == cluster]
-        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], 
-                   c=[colors[i]], label=f'Cluster {int(cluster)}', alpha=0.7, s=50)
+        cluster_mask = cluster_assignments == cluster
+        if anomalies is not None:
+            # Only plot non-anomalous points in cluster colors
+            normal_mask = cluster_mask & ~anomalies
+            cluster_points = data[normal_mask]
+        else:
+            cluster_points = data[cluster_mask]
+        
+        if len(cluster_points) > 0:
+            plt.scatter(cluster_points[:, 0], cluster_points[:, 1], 
+                       c=[colors[i]], label=f'Cluster {int(cluster)}', alpha=0.7, s=50)
+    
+    # Plot anomalous points if detected
+    if anomalies is not None and np.any(anomalies):
+        anomalous_points = data[anomalies]
+        plt.scatter(anomalous_points[:, 0], anomalous_points[:, 1], 
+                   c='orange', marker='^', s=100, label='Anomalies', alpha=0.8, edgecolors='black')
     
     # Plot centroids
     plt.scatter(centroids[:, 0], centroids[:, 1], 
@@ -83,14 +114,17 @@ def visualize_clusters(data: np.ndarray, cluster_assignments: np.ndarray, centro
     
     plt.xlabel('Feature 1')
     plt.ylabel('Feature 2')
-    plt.title('K-Means Clustering Results')
+    plt.title('K-Means Clustering')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.show()
 
 # Some test code
 import Loading
-data = Loading.load_data(0)[1]
-centroids = initialize_centroids(3, data=data)
-clusters, centroids = fit(5, data, centroids, 100)
-visualize_clusters(data, clusters, centroids)
+k = 10
+iterations = 100
+threshold = 5.0
+data = Loading.load_data(0)[2]
+centroids = initialize_centroids(k, data=data)
+clusters, centroids, anomalies = fit(k, data, centroids, iterations, threshold)
+visualize_clusters(data, clusters, centroids, anomalies)
