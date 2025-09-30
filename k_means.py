@@ -52,7 +52,7 @@ def detect_anomalies(data: np.ndarray, centroids: np.ndarray, cluster_assignment
     return anomalies
 
 def fit(k: int, data: np.ndarray, centroids: np.ndarray, max_iterations: int, threshold: float = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    initialize_centroids(k, data)
+    # Remove the initialize_centroids call since centroids are passed as parameter
     
     for iteration in range(max_iterations):
         # Assign points to clusters
@@ -119,12 +119,41 @@ def visualize_clusters(data: np.ndarray, cluster_assignments: np.ndarray, centro
     plt.grid(True, alpha=0.3)
     plt.show()
 
-# Some test code
-import Loading
-k = 10
-iterations = 100
-threshold = 5.0
-data = Loading.load_data(0)[2]
-centroids = initialize_centroids(k, data=data)
-clusters, centroids, anomalies = fit(k, data, centroids, iterations, threshold)
-visualize_clusters(data, clusters, centroids, anomalies)
+def train_hyperparameters(max_k: int, max_threshold: int, iterations: int, data: np.ndarray) -> None:
+    best_k = 0
+    best_threshold = 0.0
+    min_anomalies = float('inf')
+    best_clusters = None
+    best_centroids = None
+    best_anomalies = None
+
+    for k in range(1, max_k):
+        centroids = initialize_centroids(k, data=data)
+
+        for threshold in range(1, max_threshold):
+            clusters, centroids, anomalies = fit(k, data, centroids, iterations, float(threshold))
+            anomaly_count = np.sum(anomalies)
+            print(f"k={k}, threshold={threshold}, anomalies={anomaly_count}")
+
+            if anomaly_count < min_anomalies:
+                best_k = k
+                best_threshold = threshold
+                best_clusters = clusters
+                best_centroids = centroids
+                best_anomalies = anomalies
+                min_anomalies = anomaly_count
+
+    print("Ideal k value: ", best_k)
+    print("Ideal distance threshold: ", best_threshold)
+    visualize_clusters(data, best_clusters, best_centroids, best_anomalies)
+
+def test():
+    import Loading
+    
+    max_k = 19
+    max_threshold = 7
+    iterations = 50
+    data = Loading.load_data(0)[1]
+    train_hyperparameters(max_k, max_threshold, iterations, data)
+
+test()
