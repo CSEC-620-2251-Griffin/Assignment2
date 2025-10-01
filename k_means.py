@@ -119,33 +119,53 @@ def visualize_clusters(data: np.ndarray, cluster_assignments: np.ndarray, centro
     plt.grid(True, alpha=0.3)
     plt.show()
 
-def train_hyperparameters(max_k: int, max_threshold: int, iterations: int, data: np.ndarray) -> None:
-    best_k = 0
-    best_threshold = 0.0
-    min_anomalies = float('inf')
-    best_clusters = None
-    best_centroids = None
-    best_anomalies = None
+def plot_hyperparameters(k_values: list, threshold_values: list, k_variances: list, t_variances: list) -> None:
+    # Plot training results of k
+    plt.plot(k_values, k_variances)
+    plt.xlabel('Values of k')
+    plt.ylabel('Variances')
+    plt.title('Training hyperparameter k')
+    plt.grid(True, alpha=0.3)
+    plt.show()
 
+    # Plot training results of t
+    plt.plot(threshold_values, t_variances)
+    plt.xlabel('Values of t')
+    plt.ylabel('Variances')
+    plt.title('Training hyperparameter t')
+    plt.grid(True, alpha=0.3)
+    plt.show()    
+
+def intercluster_variance(data: np.ndarray, cluster_assignments: np.ndarray, centroids: np.ndarray) -> float:
+    variance = 0.0
+    
+    for i, point in enumerate(data):
+        assigned_cluster = int(cluster_assignments[i])
+        variance += euclidean_distance(point, centroids[assigned_cluster]) ** 2.0
+    
+    return variance
+
+def train_hyperparameters(max_k: int, max_threshold: int, iterations: int, data: np.ndarray) -> None:
+    k_values = list()
+    threshold_values = list()
+    k_variances = list()
+    t_variances = list()
+    
+    # Train k value with fixed threshold
     for k in range(1, max_k):
         centroids = initialize_centroids(k, data=data)
+        clusters, centroids, _ = fit(k, data, centroids, iterations, 5.0)
+        k_values.append(k)
+        k_variances.append(intercluster_variance(data, clusters, centroids))
 
-        for threshold in range(1, max_threshold):
-            clusters, centroids, anomalies = fit(k, data, centroids, iterations, float(threshold))
-            anomaly_count = np.sum(anomalies)
-            print(f"k={k}, threshold={threshold}, anomalies={anomaly_count}")
+    # Train distance threshold with fixed k value
+    for t in range(1, max_threshold):
+        centroids = initialize_centroids(5, data=data)
+        clusters, centroids, _ = fit(5, data, centroids, iterations, t)
+        threshold_values.append(t)
+        t_variances.append(intercluster_variance(data, clusters, centroids))
 
-            if anomaly_count < min_anomalies:
-                best_k = k
-                best_threshold = threshold
-                best_clusters = clusters
-                best_centroids = centroids
-                best_anomalies = anomalies
-                min_anomalies = anomaly_count
-
-    print("Ideal k value: ", best_k)
-    print("Ideal distance threshold: ", best_threshold)
-    visualize_clusters(data, best_clusters, best_centroids, best_anomalies)
+    plot_hyperparameters(k_values, threshold_values, k_variances, t_variances)
 
 def test():
     import Loading
