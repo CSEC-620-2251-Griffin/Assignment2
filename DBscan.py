@@ -77,16 +77,7 @@ def dbscan_matrix(train_pca, normal_pca, attack_pca, eps, min_pts):
     return {"TP": tp, "TN": tn, "FP": fp, "FN": fn,
             "Accuracy": acc, "TPR": tpr_v, "FPR": fpr_v, "F1": f1_v}
 
-def tune_dbscan(train_pca, normal_pca, attack_pca,
-                eps_values=None, min_pts_values=None, score='f1'):
-    """
-    Minimal hyperparameter search for DBSCAN core-point rule.
-    Uses your dbscan_matrix(...) to evaluate each (eps, min_pts).
-    Returns (best_result_dict, all_results_sorted_desc).
-
-    score ∈ {'f1','accuracy','tpr','fpr'}
-    - 'fpr' is minimized (we maximize 1 - FPR under the hood).
-    """
+def tune_dbscan(train_pca, normal_pca, attack_pca, eps_values=None, min_pts_values=None, score='f1'):
 
     def score_val(metrics, which):
         s = which.lower()
