@@ -184,22 +184,30 @@ def test_hparam():
     train_hyperparameters(max_k, max_threshold, iterations, data)
 
 def metrics(k_val=5, thresh=5.0, p_print=True):
+    # Creates the metrics for the given k and threshold of a Kmean algorithm
+    #Boolean p_print to print the results or not
 
+    #Load data (to ensure accurate) 
     t_data, a_data, n_data = Loading.load_data()
+    
+    #Create the combined data set for true and false positive/negatives
     data_r = np.vstack([n_data, a_data])
     y_true = np.concatenate([np.zeros(len(n_data), dtype=int),np.ones(len(a_data), dtype=int)])
 
-
+    #Create the clusters and anomalies
+    #Enables creation of the prediction set
     centroids = initialize_centroids(k_val, data=t_data)
     clusters = assign_clusters(data_r, centroids)
     anom = detect_anomalies(data_r, centroids, clusters, thresh)
     y_pred = anom.astype(int)
 
+    #Make the confusion matrix
     TP = np.sum((y_true == 1) & (y_pred == 1))
     TN = np.sum((y_true == 0) & (y_pred == 0))
     FP = np.sum((y_true == 0) & (y_pred == 1))
     FN = np.sum((y_true == 1) & (y_pred == 0))
 
+    #use functions from Loading to calculate the metrics
     acc = Loading.accuracy(TP, TN, FP, FN)
     tpr = Loading.tpr(TP, FN)
     fpr = Loading.fpr(FP, TN)
@@ -222,6 +230,8 @@ def store_best(k_val, thresh, acc, tpr, fpr, f1_s, c_best=[5,5.0,0,0,1,0]):
         c_best[3] = tpr
         c_best[4] = fpr
         c_best[5] = f1_s
+    
+    #All this does is help find the best metrics and store them
     return c_best
 
 
