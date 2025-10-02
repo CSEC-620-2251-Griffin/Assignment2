@@ -80,4 +80,7 @@ def plot_data(train_pca, attack_pca, normal_pca):
 
 if __name__ == "__main__":
     train_pca, attack_pca, normal_pca = load_data(seed=0)
-    plot_data(train_pca, attack_pca, normal_pca)
+    #plot_data(train_pca, attack_pca, normal_pca)
+    do_dbscan(train_pca, 0.5, 4)
+    x = dbscan_matrix(train_pca, normal_pca, attack_pca, 0.5, 4)
+    print(x)
