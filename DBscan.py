@@ -33,3 +33,27 @@ def do_dbscan(train_pca, eps, min_pts):
     plt.grid(alpha=0.3)
     plt.tight_layout()
     plt.show()
+
+
+def dbscan_matrix(train_pca, normal_pca, attack_pca, eps, min_pts):
+    core_points, core_mask, neighbors_count = dbscan_core(train_pca, eps, min_pts)
+
+    X_test = np.vstack((normal_pca, attack_pca))
+    normal_mask = np.asarray(dbscan_cluster(core_points, X_test, eps), dtype=bool) 
+
+    n_normal = normal_pca.shape[0]
+    n_attack = attack_pca.shape[0]
+
+    tn = int(np.sum(normal_mask[:n_normal]))       
+    fp = n_normal - tn                              
+    fn = int(np.sum(normal_mask[n_normal:]))        
+    tp = n_attack - fn                               
+
+    acc = accuracy(tp, tn, fp, fn)
+    tpr_v = tpr(tp, fn)
+    fpr_v = fpr(fp, tn)
+    f1_v  = f1_score(tp, fp, fn)
+
+    return {"TP": tp, "TN": tn, "FP": fp, "FN": fn,
+            "Accuracy": acc, "TPR": tpr_v, "FPR": fpr_v, "F1": f1_v}
+
