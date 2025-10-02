@@ -36,9 +36,9 @@ def load_data(seed=0):
     #Output: train_pca, attack_pca, normal_pca - all in PCA space 2D
 
     # Load the data
-    data_attack = np.load('/home/t/Downloads/Code/Assignment2/A2_materials/data/testing_attack.npy')   # shape: [n_attack, 41]
-    data_normal = np.load('/home/t/Downloads/Code/Assignment2/A2_materials/data/testing_normal.npy')   # shape: [n_normal, 41]
-    train_normal = np.load('/home/t/Downloads/Code/Assignment2/A2_materials/data/training_normal.npy') # shape: [n_train_norm, 41]
+    data_attack = np.load('A2_materials/KDD99/testing_attack.npy')   # shape: [n_attack, 41]
+    data_normal = np.load('A2_materials/KDD99/testing_normal.npy')   # shape: [n_normal, 41]
+    train_normal = np.load('A2_materials/KDD99/training_normal.npy') # shape: [n_train_norm, 41]
 
 
     # Scale all of the data presently
