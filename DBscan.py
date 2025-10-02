@@ -2,6 +2,26 @@ import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
 
+def accuracy(true_pos, true_neg, false_pos, false_neg):
+    #Calculates the accuracy given the parameters
+    #All parameters are integers
+    return (true_pos + true_neg) / (true_pos + true_neg + false_pos + false_neg)
+
+def tpr(true_pos, false_neg):
+    #Calulates the true positive rate given the parameters
+    #All parameters are integers
+    return true_pos / (true_pos + false_neg)
+
+def fpr(false_pos, true_neg):
+    #Calulates the false positive rate given the parameters
+    #All parameters are integers
+    return false_pos / (false_pos + true_neg)
+
+def f1_score(true_pos, false_pos, false_neg):
+    #Calulates the F1 score given the parameters
+    #All parameters are integers
+    return (2 * true_pos) / (2 * true_pos + false_pos + false_neg)
+
 def dbscan_core(X: np.array, eps, min_pts):
     X = np.array(X, dtype=float)
     D = euclidean_distances(X)
@@ -57,3 +77,40 @@ def dbscan_matrix(train_pca, normal_pca, attack_pca, eps, min_pts):
     return {"TP": tp, "TN": tn, "FP": fp, "FN": fn,
             "Accuracy": acc, "TPR": tpr_v, "FPR": fpr_v, "F1": f1_v}
 
+def tune_dbscan(train_pca, normal_pca, attack_pca,
+                eps_values=None, min_pts_values=None, score='f1'):
+    """
+    Minimal hyperparameter search for DBSCAN core-point rule.
+    Uses your dbscan_matrix(...) to evaluate each (eps, min_pts).
+    Returns (best_result_dict, all_results_sorted_desc).
+
+    score ∈ {'f1','accuracy','tpr','fpr'}
+    - 'fpr' is minimized (we maximize 1 - FPR under the hood).
+    """
+
+    def score_val(metrics, which):
+        s = which.lower()
+        if s == 'f1':
+            return metrics['F1']
+        if s == 'accuracy':
+            return metrics['Accuracy']
+        if s == 'tpr':
+            return metrics['TPR']
+        if s == 'fpr':
+            return 1.0 - metrics['FPR']  # lower FPR is better
+        raise ValueError("score must be one of: 'f1','accuracy','tpr','fpr'")
+
+    results = []
+    best = None
+
+    for eps in eps_values:
+        for m in min_pts_values:
+            metrics = dbscan_matrix(train_pca, normal_pca, attack_pca, eps=float(eps), min_pts=int(m))
+            sv = score_val(metrics, score)
+            rec = {'eps': float(eps), 'min_pts': int(m), 'score': sv, **metrics}
+            results.append(rec)
+            if best is None or sv > best['score']:
+                best = rec
+
+    results.sort(key=lambda r: r['score'], reverse=True)
+    return best, results
