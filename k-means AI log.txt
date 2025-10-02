@@ -1,0 +1,173 @@
+Kijuy874: Create a function to visualize the results of k means clustering on a dataset
+
+GitHub Copilot: I'll add a visualization function to your k-means clustering implementation. This function will plot the data points colored by their cluster assignments along with the centroids.
+
+## Step-by-step solution:
+1. Fix the matplotlib import (should be matplotlib.pyplot)
+2. Add a `visualize_clusters` function that creates a scatter plot of the data points colored by cluster
+3. Plot centroids as larger markers with different styling
+4. Add labels, title, and legend for clarity
+
+### [k_means.py](file:///Users/tritran/VS%20Code/Classes/CSEC-620/Assignment2/k_means.py)
+
+Add matplotlib.pyplot import and create a visualization function to plot clustered data points and centroids.
+
+````python
+import numpy as np
+import matplotlib.pyplot as plt
+from typing import Tuple
+
+# ...existing code...
+
+def visualize_clusters(data: np.ndarray, cluster_assignments: np.ndarray, centroids: np.ndarray, title: str = "K-Means Clustering Results") -> None:
+    """
+    Visualize the clustering results with different colors for each cluster.
+    
+    Args:
+        data: The dataset points
+        cluster_assignments: Array indicating which cluster each point belongs to
+        centroids: The final centroid positions
+        title: Title for the plot
+    """
+    plt.figure(figsize=(10, 8))
+    
+    # Get unique clusters and create color map
+    unique_clusters = np.unique(cluster_assignments)
+    colors = plt.cm.tab10(np.linspace(0, 1, len(unique_clusters)))
+    
+    # Plot data points colored by cluster
+    for i, cluster in enumerate(unique_clusters):
+        cluster_points = data[cluster_assignments == cluster]
+        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], 
+                   c=[colors[i]], label=f'Cluster {int(cluster)}', alpha=0.7, s=50)
+    
+    # Plot centroids
+    plt.scatter(centroids[:, 0], centroids[:, 1], 
+               c='red', marker='x', s=200, linewidths=3, label='Centroids')
+    
+    plt.xlabel('Feature 1')
+    plt.ylabel('Feature 2')
+    plt.title(title)
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.show()
+
+# ...existing code...
+````
+
+Made changes.
+
+Kijuy874: Modify this k means implementation to add a threshold t where a point is marked as anomalous if it's distance is greater than t.
+
+GitHub Copilot: I'll modify the k-means implementation to add anomaly detection based on a distance threshold. Here's the step-by-step solution:
+
+1. Add a parameter `t` (threshold) to the main functions
+2. Modify the `fit` function to track distances and identify anomalies
+3. Add an `detect_anomalies` function to identify points beyond the threshold
+4. Update the visualization to show anomalous points differently
+5. Modify the test code to use the new anomaly detection feature
+
+### [k_means.py](file:///Users/tritran/VS%20Code/Classes/CSEC-620/Assignment2/k_means.py)
+
+Add anomaly detection functionality with distance threshold parameter and update visualization to distinguish anomalous points.
+
+````python
+import numpy as np
+import matplotlib.pyplot as plt
+from typing import Tuple
+
+# ...existing code...
+
+def detect_anomalies(data: np.ndarray, centroids: np.ndarray, cluster_assignments: np.ndarray, threshold: float) -> np.ndarray:
+    """
+    Detect anomalous points based on distance threshold from their assigned centroid.
+    Returns boolean array where True indicates an anomalous point.
+    """
+    n_samples = data.shape[0]
+    anomalies = np.zeros(n_samples, dtype=bool)
+    
+    for i, point in enumerate(data):
+        assigned_cluster = int(cluster_assignments[i])
+        distance = euclidean_distance(point, centroids[assigned_cluster])
+        anomalies[i] = distance > threshold
+    
+    return anomalies
+
+def fit(k: int, data: np.ndarray, centroids: np.ndarray, max_iterations: int, threshold: float = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    initialize_centroids(k, data)
+    
+    for iteration in range(max_iterations):
+        # Assign points to clusters
+        cluster_assignments = assign_clusters(data, centroids)
+        
+        # Update centroids
+        k = centroids.shape[0]
+        new_centroids = update_centroids(k, data, cluster_assignments, centroids)
+        
+        # Check for convergence
+        if np.allclose(centroids, new_centroids):
+            print(f"Converged after {iteration + 1} iterations")
+            break
+        
+        centroids = new_centroids
+    
+    # Detect anomalies if threshold is provided
+    anomalies = np.zeros(len(data), dtype=bool)
+    if threshold is not None:
+        anomalies = detect_anomalies(data, centroids, cluster_assignments, threshold)
+        print(f"Detected {np.sum(anomalies)} anomalous points")
+    
+    return cluster_assignments, centroids, anomalies
+
+# ...existing code...
+
+def visualize_clusters(data: np.ndarray, cluster_assignments: np.ndarray, centroids: np.ndarray, anomalies: np.ndarray = None) -> None:
+    plt.figure(figsize=(12, 8))
+    
+    # Get unique clusters and create color map
+    unique_clusters = np.unique(cluster_assignments)
+    colors = plt.cm.tab10(np.linspace(0, 1, len(unique_clusters)))
+    
+    # Plot normal data points colored by cluster
+    for i, cluster in enumerate(unique_clusters):
+        cluster_mask = cluster_assignments == cluster
+        if anomalies is not None:
+            # Only plot non-anomalous points in cluster colors
+            normal_mask = cluster_mask & ~anomalies
+            cluster_points = data[normal_mask]
+        else:
+            cluster_points = data[cluster_mask]
+        
+        if len(cluster_points) > 0:
+            plt.scatter(cluster_points[:, 0], cluster_points[:, 1], 
+                       c=[colors[i]], label=f'Cluster {int(cluster)}', alpha=0.7, s=50)
+    
+    # Plot anomalous points if detected
+    if anomalies is not None and np.any(anomalies):
+        anomalous_points = data[anomalies]
+        plt.scatter(anomalous_points[:, 0], anomalous_points[:, 1], 
+                   c='orange', marker='^', s=100, label='Anomalies', alpha=0.8, edgecolors='black')
+    
+    # Plot centroids
+    plt.scatter(centroids[:, 0], centroids[:, 1], 
+               c='red', marker='x', s=200, linewidths=3, label='Centroids')
+    
+    plt.xlabel('Feature 1')
+    plt.ylabel('Feature 2')
+    plt.title('K-Means Clustering with Anomaly Detection')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.show()
+
+# Some test code
+import Loading
+k = 10
+iterations = 100
+threshold = 2.0  # Distance threshold for anomaly detection
+data = Loading.load_data(0)[1]
+centroids = initialize_centroids(k, data=data)
+clusters, centroids, anomalies = fit(k, data, centroids, iterations, threshold)
+visualize_clusters(data, clusters, centroids, anomalies)
+````
+
+Made changes.
